@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>いーちすたいる — EACH STYLE</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+  background: #f5f0ff;
+  color: #2d2d2d;
+  min-height: 100vh;
+}
+
+.screen {
+  display: none;
+  min-height: 100vh;
+  padding: 24px 20px 48px;
+  flex-direction: column;
+  align-items: center;
+}
+.screen.active { display: flex; }
+
+/* ===== COMMON ===== */
+.logo-sm { font-size: 11px; letter-spacing: .2em; color: #9b6fd0; margin-bottom: 4px; text-align: center; }
+.game-title { font-size: 36px; font-weight: 700; color: #4a1f8a; letter-spacing: .05em; text-align: center; line-height: 1.1; }
+.game-en { font-size: 12px; letter-spacing: .22em; color: #8b5ad2; text-align: center; margin-bottom: 28px; }
+
+.btn {
+  display: block; width: 100%; max-width: 360px;
+  padding: 15px 20px; border-radius: 12px;
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  border: none; font-family: inherit; text-align: center;
+  transition: opacity .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn-primary { background: #6b3fa0; color: #fff; }
+.btn-secondary { background: white; border: 2px solid #c4a0f0; color: #6b3fa0; margin-top: 10px; }
+
+/* ===== CARD ===== */
+.game-card {
+  background: white; border-radius: 16px;
+  border: 2px solid #c4a0f0; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(107,63,160,.15);
+  width: 100%; max-width: 280px; margin: 0 auto;
+}
+.game-card-img { width: 100%; display: block; }
+.game-card-header { background: #6b3fa0; padding: 12px 16px; }
+.game-card-tag { font-size: 9px; letter-spacing: .2em; color: #d4b8f5; margin-bottom: 4px; }
+.game-card-title { font-size: 20px; font-weight: 700; color: white; }
+.game-card-illust {
+  background: #ece5fa; height: 140px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px;
+}
+.game-card-serif {
+  padding: 14px 16px; font-size: 13px; color: #444;
+  line-height: 1.9; border-top: 1px solid #f0e8ff;
+}
+.game-card-footer {
+  background: #f5f0ff; padding: 7px 16px;
+  font-size: 9px; color: #9b6fd0; letter-spacing: .15em; text-align: right;
+}
+
+/* ===== STATUS BOX ===== */
+.status-box {
+  width: 100%; max-width: 360px;
+  background: #e8d5f5; border-radius: 14px;
+  padding: 16px 20px; margin-bottom: 20px; text-align: center;
+}
+.status-box h2 { font-size: 22px; color: #4a1f8a; font-weight: 700; margin-bottom: 4px; }
+.status-box p { font-size: 13px; color: #6b3fa0; line-height: 1.7; }
+
+/* ===== LOOK AWAY ===== */
+.look-away-box {
+  width: 100%; max-width: 360px;
+  background: #4a1f8a; border-radius: 20px;
+  padding: 32px 24px; text-align: center; margin-bottom: 24px;
+}
+.look-away-box .eyes { font-size: 48px; margin-bottom: 12px; }
+.look-away-box h2 { font-size: 24px; font-weight: 700; color: white; margin-bottom: 8px; }
+.look-away-box p { font-size: 14px; color: #c4a0f0; line-height: 1.7; }
+
+/* ===== ANSWER CARD ===== */
+.answer-card {
+  width: 100%; max-width: 360px;
+  background: white; border: 1.5px solid #d4b8f5;
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+}
+.answer-by { font-size: 11px; color: #9b6fd0; margin-bottom: 5px; }
+.answer-text { font-size: 15px; color: #2d2d2d; line-height: 1.7; }
+.answer-card.winner { border: 2.5px solid #6b3fa0; background: #f5f0ff; }
+.choose-btn {
+  margin-top: 10px; padding: 8px 18px;
+  background: white; border: 1.5px solid #6b3fa0;
+  border-radius: 8px; color: #6b3fa0;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  width: 100%; transition: background .15s, color .15s;
+}
+.choose-btn:hover { background: #6b3fa0; color: white; }
+
+/* ===== SETUP ===== */
+.player-input-row {
+  display: flex; gap: 8px; width: 100%;
+  max-width: 360px; margin-bottom: 8px; align-items: center;
+}
+.player-input-row input {
+  flex: 1; padding: 11px 14px;
+  border: 1.5px solid #c4a0f0; border-radius: 10px;
+  font-size: 15px; font-family: inherit; background: white; color: #2d2d2d;
+}
+.player-input-row input:focus { outline: none; border-color: #6b3fa0; }
+.remove-btn {
+  background: none; border: none; color: #c4a0f0;
+  font-size: 22px; cursor: pointer; padding: 4px; line-height: 1;
+}
+.add-player-btn {
+  width: 100%; max-width: 360px; padding: 11px;
+  border: 2px dashed #c4a0f0; border-radius: 10px;
+  background: none; font-size: 14px; color: #8b5ad2;
+  cursor: pointer; font-family: inherit; margin-bottom: 20px;
+}
+
+/* ===== ANSWER INPUT ===== */
+.answer-textarea {
+  width: 100%; max-width: 360px; padding: 12px 16px;
+  border: 2px solid #c4a0f0; border-radius: 12px;
+  font-size: 16px; font-family: inherit; background: white;
+  color: #2d2d2d; resize: none; margin-bottom: 12px; line-height: 1.6;
+}
+.answer-textarea:focus { outline: none; border-color: #6b3fa0; }
+
+/* ===== REMINDER BOX ===== */
+.reminder-box {
+  width: 100%; max-width: 360px;
+  background: #f0eaff; border-radius: 12px;
+  padding: 12px 16px; margin-bottom: 18px;
+}
+.reminder-label { font-size: 10px; color: #9b6fd0; margin-bottom: 4px; }
+.reminder-title { font-size: 15px; font-weight: 700; color: #4a1f8a; margin-bottom: 3px; }
+.reminder-serif { font-size: 12px; color: #555; line-height: 1.7; }
+
+/* ===== SCORE ===== */
+.score-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 0; border-bottom: 1px solid #f0e8ff;
+  width: 100%; max-width: 360px;
+}
+.score-row:last-child { border: none; }
+.score-pts { font-size: 20px; font-weight: 700; color: #6b3fa0; }
+
+/* ===== AVATAR ===== */
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+
+/* ===== PROGRESS ===== */
+.progress-wrap { width: 100%; max-width: 360px; margin-bottom: 20px; }
+.progress-bar { background: #e0d0f5; border-radius: 6px; height: 6px; overflow: hidden; }
+.progress-fill { height: 100%; background: #6b3fa0; border-radius: 6px; transition: width .4s; }
+.progress-label { font-size: 12px; color: #9b6fd0; text-align: right; margin-bottom: 4px; }
+
+/* ===== REASON BOX ===== */
+.reason-box {
+  width: 100%; max-width: 360px;
+  background: #fff8ee; border: 1.5px solid #ef9f27;
+  border-radius: 12px; padding: 16px; margin-bottom: 20px;
+}
+.reason-box .reason-label { font-size: 12px; color: #ba7517; font-weight: 700; margin-bottom: 6px; }
+.reason-box p { font-size: 13px; color: #444; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<!-- ===== TITLE ===== -->
+<div id="screen-title" class="screen active">
+  <div style="margin-top:auto; text-align:center;">
+    <div class="logo-sm">C A R D &nbsp; G A M E</div>
+    <div class="game-title">いーちすたいる</div>
+    <div class="game-en">E A C H &nbsp; S T Y L E</div>
+    <p style="font-size:14px; color:#555; margin-bottom:40px; line-height:2;">
+      「言われたい言葉」は、人それぞれ。<br>
+      <strong style="color:#5a2fa0;">あなたが求める言葉</strong>を、みんなで探そう。
+    </p>
+    <button class="btn btn-primary" onclick="showScreen('screen-setup')">ゲームを始める</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-rules')">遊び方を見る</button>
+  </div>
+  <div style="margin-top:auto; font-size:11px; color:#ccc; padding-top:24px;">EACH STYLE</div>
+</div>
+
+<!-- ===== RULES ===== -->
+<div id="screen-rules" class="screen">
+  <div style="width:100%; max-width:360px;">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div class="logo-sm">遊び方</div>
+      <div class="game-title" style="font-size:26px;">いーちすたいる</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      <div style="background:white; border-radius:12px; border:1.5px solid #d4b8f5; padding:16px;">
+        <div style="font-weight:700; color:#6b3fa0; margin-bottom:6px;">STEP 1 &nbsp;カードを引く</div>
+        <div style="font-size:13px; color:#555; line-height:1.7;">アクティブプレイヤーが目を閉じる。他のみんながお題カードを確認する。</div>
+      </div>
+      <div style="background:white; border-radius:12px; border:1.5px solid #d4b8f5; padding:16px;">
+        <div style="font-weight:700; color:#6b3fa0; margin-bottom:6px;">STEP 2 &nbsp;言葉を考える</div>
+        <div style="font-size:13px; color:#555; line-height:1.7;">他のプレイヤーが「アクティブプレイヤーが言われたい言葉」をひとりずつ入力する。</div>
+      </div>
+      <div style="background:white; border-radius:12px; border:1.5px solid #d4b8f5; padding:16px;">
+        <div style="font-weight:700; color:#6b3fa0; margin-bottom:6px;">STEP 3 &nbsp;答えを選ぶ</div>
+        <div style="font-size:13px; color:#555; line-height:1.7;">アクティブプレイヤーが目を開けて、全員の回答から一番言われたい言葉を選ぶ。</div>
+      </div>
+      <div style="background:white; border-radius:12px; border:1.5px solid #d4b8f5; padding:16px;">
+        <div style="font-weight:700; color:#6b3fa0; margin-bottom:6px;">STEP 4 &nbsp;理由を話す ★最重要</div>
+        <div style="font-size:13px; color:#555; line-height:1.7;">なぜその言葉を選んだか話す。選ばれた人に1点。</div>
+      </div>
+    </div>
+
+    <div style="background:#e8d5f5; border-radius:12px; padding:14px 16px; margin-bottom:24px;">
+      <div style="font-size:13px; color:#4a1f8a; line-height:1.8;">山札がなくなったらゲーム終了。<br>合計得点が一番高い人の勝ち！</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="showScreen('screen-setup')">プレイヤーを設定する</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">タイトルに戻る</button>
+  </div>
+</div>
+
+<!-- ===== SETUP ===== -->
+<div id="screen-setup" class="screen">
+  <div style="width:100%; max-width:360px;">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div class="logo-sm">C A R D &nbsp; G A M E</div>
+      <div class="game-title">いーちすたいる</div>
+      <div class="game-en">E A C H &nbsp; S T Y L E</div>
+    </div>
+
+    <div style="font-size:13px; color:#6b3fa0; margin-bottom:12px; font-weight:700;">プレイヤー名を入力（2〜8人）</div>
+    <div id="player-inputs"></div>
+    <button class="add-player-btn" id="add-btn" onclick="addPlayerInput()">＋ プレイヤーを追加</button>
+
+    <button class="btn btn-primary" onclick="startGame()">ゲームスタート！</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">タイトルへ戻る</button>
+  </div>
+</div>
+
+<!-- ===== TURN START ===== -->
+<div id="screen-turn-start" class="screen">
+  <div id="progress-area" class="progress-wrap"></div>
+  <div class="look-away-box">
+    <div class="eyes">👁️</div>
+    <h2 id="active-name-display">さんご</h2>
+    <p>さん、目を閉じてください！<br>他のプレイヤーだけカードを見ます。</p>
+  </div>
+  <p style="font-size:13px; color:#6b3fa0; margin-bottom:20px; text-align:center;">
+    目を閉じたことを確認してから<br>カードを表示します
+  </p>
+  <button class="btn btn-primary" onclick="revealCard()">カードを表示する →</button>
+</div>
+
+<!-- ===== CARD REVEAL ===== -->
+<div id="screen-card-reveal" class="screen">
+  <div style="width:100%; text-align:center;">
+    <div style="background:#4a1f8a; border-radius:10px; padding:8px 18px; margin-bottom:18px; display:inline-block;">
+      <span id="looking-away-label" style="color:#c4a0f0; font-size:12px;">👁️ さんごさんは目を閉じています</span>
+    </div>
+    <div id="card-display"></div>
+    <div style="height:20px;"></div>
+    <button class="btn btn-primary" onclick="startAnswers()">みんなで回答する →</button>
+  </div>
+</div>
+
+<!-- ===== ANSWER INPUT ===== -->
+<div id="screen-answer" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div class="status-box">
+      <h2 id="answerer-name-display"></h2>
+      <p>さん、言葉を入力してください</p>
+    </div>
+
+    <div class="reminder-box">
+      <div class="reminder-label">お 題</div>
+      <div class="reminder-title" id="reminder-title"></div>
+      <div class="reminder-serif" id="reminder-serif"></div>
+    </div>
+
+    <textarea class="answer-textarea" id="answer-input" rows="3"
+      placeholder="あなたなら何と言いますか？"></textarea>
+
+    <div style="font-size:12px; color:#9b6fd0; margin-bottom:12px;" id="answer-count-label"></div>
+
+    <button class="btn btn-primary" onclick="submitAnswer()">送信する →</button>
+  </div>
+</div>
+
+<!-- ===== REVEAL ===== -->
+<div id="screen-reveal" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div class="status-box">
+      <h2 id="reveal-active-name"></h2>
+      <p>さん、目を開けてください！<br>一番言われたいと思う言葉を選んでください。</p>
+    </div>
+    <div id="answers-list"></div>
+  </div>
+</div>
+
+<!-- ===== REASON ===== -->
+<div id="screen-reason" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div style="font-size:40px; margin-bottom:12px;">🎉</div>
+    <div class="status-box">
+      <h2 id="winner-name-display"></h2>
+      <p>さんの回答が選ばれました！</p>
+    </div>
+    <div id="winning-answer-card" class="answer-card winner" style="text-align:left; margin-bottom:16px;"></div>
+    <div class="reason-box">
+      <div class="reason-label">🗣️ ここが一番大切！</div>
+      <p id="reason-text"></p>
+    </div>
+    <button class="btn btn-primary" onclick="goToScore()">スコアを見る →</button>
+  </div>
+</div>
+
+<!-- ===== SCORE ===== -->
+<div id="screen-score" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div style="font-size:22px; font-weight:700; color:#4a1f8a; margin-bottom:20px;">スコア</div>
+    <div id="score-list" style="width:100%; margin-bottom:20px;"></div>
+    <div id="deck-remaining-box" style="background:#f0eaff; border-radius:12px; padding:12px 16px; margin-bottom:24px; font-size:13px; color:#6b3fa0;"></div>
+    <button class="btn btn-primary" id="score-next-btn" onclick="continueFromScore()"></button>
+  </div>
+</div>
+
+<!-- ===== END ===== -->
+<div id="screen-end" class="screen">
+  <div style="text-align:center; width:100%; max-width:360px;">
+    <div style="font-size:52px; margin-bottom:12px;">🏆</div>
+    <div class="logo-sm">C A R D &nbsp; G A M E</div>
+    <div class="game-title">いーちすたいる</div>
+    <div class="game-en" style="margin-bottom:28px;">F I N A L &nbsp; S C O R E</div>
+    <div id="final-score-list" style="width:100%; margin-bottom:20px;"></div>
+    <div id="final-winner-msg" style="background:#e8d5f5; border-radius:14px; padding:18px; margin-bottom:24px;"></div>
+    <button class="btn btn-primary" onclick="restartGame()">もう一度遊ぶ</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">タイトルへ</button>
+  </div>
+</div>
+
+<script>
+// ===== CARD DATA =====
+const CARDS = [
+  // 13枚 イラスト付き
+  { id:1,  title:"怒られた時",     serif:"ミーティングを忘れて、怒られちゃった…",           img:"card_怒られた時.png"  },
+  { id:2,  title:"別れの時",       serif:"親友が来月から1年間の留学に行っちゃうんだ…",     img:"card_別れの時.png"    },
+  { id:3,  title:"寂しい時",       serif:"最近心がなんとなく寂しい気がする",               img:"card_寂しい時.png"    },
+  { id:4,  title:"バズってた時",   serif:"SNSの投稿がバズって、通知が止まらない…！",       img:"card_バズってた時.png" },
+  { id:5,  title:"夕食会計の時",   serif:"あ…財布を置いてきちゃった",                     img:"card_夕食会計の時.png" },
+  { id:6,  title:"〇〇直前",       serif:"今週空いている日ある？伝えたいことがあって…",     img:"card_〇〇直前.png"    },
+  { id:7,  title:"わがまま",       serif:"もうちょっとだけ一緒にいよう",                   img:"card_わがまま.png"    },
+  { id:8,  title:"別れた時",       serif:"昨日、別れた。何にも考えられない。",             img:"card_別れた時.png"    },
+  { id:9,  title:"しんどい時",     serif:"疲れた。何もしたくない。でもやらないといけない事がある。", img:"card_しんどい時.png" },
+  { id:10, title:"だるい時",       serif:"だるすぎ。予定全部ブッチしようかな。",           img:"card_だるい時.png"    },
+  { id:11, title:"遅刻40分",       serif:"ごめん40分遅れます。理由は後で言います。",       img:"card_遅刻40分.png"    },
+  { id:12, title:"人肌恋しい時",   serif:"とにかく人肌が恋しい。頼れる人がほしい",         img:"card_人肌恋しい時.png" },
+  { id:13, title:"遅刻70分",       serif:"ごめん70分遅れます。理由は後で言います。",       img:"card_遅刻70分.png"    },
+  // 6枚 テキストカード（イラストなし）
+  { id:14, title:"心が沈んでいる時",      serif:"誰も私のことを愛してくれない…",                       img:"orig_心が沈んでいる時.png" },
+  { id:15, title:"一人の時",              serif:"バイト先でなかなか友達ができない",                       img:"orig_一人の時.png" },
+  { id:16, title:"ちょっと急だけど",      serif:"ねえ、私のことどう思う？？",                            img:"orig_ちょっと急だけど.png" },
+  { id:17, title:"体調が悪そうな時",      serif:"ちょっとだけだるくてー でも大丈夫！",                   img:"orig_体調が悪そうな時.png" },
+  { id:18, title:"友人のストーリーを見て", serif:"はあ…キラキラしてて幸せそうで…羨ましいな",             img:"card_友人のストーリーを見て.png" },
+  { id:19, title:"でかい挑戦の時",        serif:"緊張で腹痛になった",                                    img:"orig_でかい挑戦の時.png" },
+];
+
+const AVATAR_BG = ['#e8d5f5','#d5f0e8','#f5e0d5','#d5e8f5','#f5f0d5','#f5d5e8','#d5f5f0','#f0d5f5'];
+const AVATAR_FG = ['#6b3fa0','#1d6e50','#993c1d','#1d4e6e','#6e6e1d','#6e1d50','#1d6e6a','#5a1d6e'];
+
+// ===== STATE =====
+let G = {
+  players: [], scores: [], deck: [],
+  activeIdx: 0, currentCard: null,
+  answers: [], nonActive: [], answererPos: 0,
+};
+
+// ===== SCREEN =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ===== SETUP =====
+let rowCount = 0;
+function addPlayerInput(name) {
+  if (rowCount >= 8) return;
+  rowCount++;
+  const n = rowCount;
+  const div = document.createElement('div');
+  div.className = 'player-input-row';
+  div.id = 'pr-' + n;
+  div.innerHTML = `<input type="text" placeholder="プレイヤー${n}" value="${name||''}" maxlength="10" id="pi-${n}">
+    <button class="remove-btn" onclick="removeRow(${n})">×</button>`;
+  document.getElementById('player-inputs').appendChild(div);
+  if (rowCount >= 8) document.getElementById('add-btn').style.display = 'none';
+}
+function removeRow(n) {
+  const el = document.getElementById('pr-' + n);
+  if (el) el.remove();
+  if (rowCount >= 8) { rowCount = document.querySelectorAll('.player-input-row').length; document.getElementById('add-btn').style.display = ''; }
+}
+function initSetup() {
+  document.getElementById('player-inputs').innerHTML = '';
+  document.getElementById('add-btn').style.display = '';
+  rowCount = 0;
+  addPlayerInput('さんご'); addPlayerInput('たかし'); addPlayerInput('みほ');
+}
+
+function startGame() {
+  const names = Array.from(document.querySelectorAll('#player-inputs input'))
+    .map(i => i.value.trim()).filter(n => n);
+  if (names.length < 2) { alert('2人以上のプレイヤーが必要です！'); return; }
+  G.players = names.map((n,i) => ({ name:n, bg:AVATAR_BG[i%8], fg:AVATAR_FG[i%8] }));
+  G.scores = new Array(names.length).fill(0);
+  G.deck = shuffle([...CARDS]);
+  G.activeIdx = 0;
+  beginTurn();
+}
+
+// ===== GAME FLOW =====
+function beginTurn() {
+  if (!G.deck.length) { endGame(); return; }
+  G.currentCard = G.deck.pop();
+  G.answers = []; G.answererPos = 0;
+  G.nonActive = G.players.map((_,i)=>i).filter(i=>i!==G.activeIdx);
+
+  const ap = G.players[G.activeIdx];
+  document.getElementById('active-name-display').textContent = ap.name;
+  document.getElementById('looking-away-label').textContent = `👁️ ${ap.name}さんは目を閉じています`;
+  renderProgress();
+  showScreen('screen-turn-start');
+}
+
+function renderProgress() {
+  const total = CARDS.length;
+  const done = total - G.deck.length - 1;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progress-area').innerHTML = `
+    <div class="progress-label">残り ${G.deck.length + 1} 枚 / ${total} 枚</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+}
+
+function revealCard() {
+  const card = G.currentCard;
+  const el = document.getElementById('card-display');
+
+  if (card.img) {
+    const img = new Image();
+    img.onload = () => {
+      el.innerHTML = `<div class="game-card"><img class="game-card-img" src="${card.img}" alt="${card.title}"></div>`;
+    };
+    img.onerror = () => { el.innerHTML = cssCard(card); };
+    img.src = card.img;
+  } else {
+    el.innerHTML = cssCard(card);
+  }
+  showScreen('screen-card-reveal');
+}
+
+function cssCard(card) {
+  return `<div class="game-card">
+    <div class="game-card-header">
+      <div class="game-card-tag">お 題 カ ー ド</div>
+      <div class="game-card-title">${esc(card.title)}</div>
+    </div>
+    <div class="game-card-illust">${card.emoji||'💜'}</div>
+    <div class="game-card-serif">${esc(card.serif)}</div>
+    <div class="game-card-footer">EACH STYLE</div>
+  </div>`;
+}
+
+function startAnswers() {
+  document.getElementById('reminder-title').textContent = G.currentCard.title;
+  document.getElementById('reminder-serif').textContent = G.currentCard.serif;
+  nextAnswerer();
+}
+
+function nextAnswerer() {
+  if (G.answererPos >= G.nonActive.length) { showReveal(); return; }
+  const p = G.players[G.nonActive[G.answererPos]];
+  document.getElementById('answerer-name-display').textContent = p.name;
+  document.getElementById('answer-input').value = '';
+  document.getElementById('answer-count-label').textContent =
+    `${G.answererPos+1} / ${G.nonActive.length} 人目`;
+  showScreen('screen-answer');
+  setTimeout(() => document.getElementById('answer-input').focus(), 80);
+}
+
+function submitAnswer() {
+  const text = document.getElementById('answer-input').value.trim();
+  if (!text) { alert('言葉を入力してください！'); return; }
+  G.answers.push({ playerIdx: G.nonActive[G.answererPos], text });
+  G.answererPos++;
+  nextAnswerer();
+}
+
+function showReveal() {
+  const ap = G.players[G.activeIdx];
+  document.getElementById('reveal-active-name').textContent = ap.name;
+  const list = document.getElementById('answers-list');
+  list.innerHTML = '';
+  shuffle([...G.answers]).forEach(ans => {
+    const p = G.players[ans.playerIdx];
+    const div = document.createElement('div');
+    div.className = 'answer-card';
+    div.innerHTML = `
+      <div class="answer-by">${esc(p.name)}</div>
+      <div class="answer-text">${esc(ans.text)}</div>
+      <button class="choose-btn" onclick="pickWinner(${ans.playerIdx})">これ！ &nbsp;♡</button>`;
+    list.appendChild(div);
+  });
+  showScreen('screen-reveal');
+}
+
+function pickWinner(winnerIdx) {
+  const winner = G.players[winnerIdx];
+  const winAns = G.answers.find(a => a.playerIdx === winnerIdx);
+  G.scores[winnerIdx]++;
+
+  document.getElementById('winner-name-display').textContent = winner.name;
+  document.getElementById('winning-answer-card').innerHTML = `
+    <div class="answer-by">${esc(winner.name)} &nbsp;♡</div>
+    <div class="answer-text">${esc(winAns.text)}</div>`;
+
+  const ap = G.players[G.activeIdx];
+  document.getElementById('reason-text').textContent =
+    `${ap.name}さん、なぜ「${winner.name}さん」の言葉を選んだか話してみよう。`
+    + `どんな気持ちが嬉しかった？`;
+
+  showScreen('screen-reason');
+}
+
+function goToScore() {
+  const sorted = G.players.map((p,i) => ({...p, score:G.scores[i], origIdx:i}))
+    .sort((a,b) => b.score - a.score);
+
+  document.getElementById('score-list').innerHTML = sorted.map((p,rank) => `
+    <div class="score-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:13px;color:#bbb;width:18px;">${rank+1}.</div>
+        <div class="avatar" style="background:${p.bg};color:${p.fg};">${p.name[0]}</div>
+        <span style="font-size:15px;">${esc(p.name)}</span>
+      </div>
+      <div class="score-pts">${p.score} pt</div>
+    </div>`).join('');
+
+  const rem = G.deck.length;
+  document.getElementById('deck-remaining-box').textContent =
+    rem > 0 ? `残り ${rem} 枚` : 'カードがなくなりました！';
+
+  const btn = document.getElementById('score-next-btn');
+  btn.textContent = rem > 0 ? '次のターンへ →' : 'ゲーム終了！';
+
+  showScreen('screen-score');
+}
+
+function continueFromScore() {
+  if (!G.deck.length) { endGame(); return; }
+  G.activeIdx = (G.activeIdx + 1) % G.players.length;
+  beginTurn();
+}
+
+function endGame() {
+  const sorted = G.players.map((p,i) => ({...p, score:G.scores[i]}))
+    .sort((a,b) => b.score - a.score);
+
+  document.getElementById('final-score-list').innerHTML = sorted.map((p,rank) => `
+    <div class="score-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:16px;width:24px;">${rank===0?'🏆':rank+1+'.'}</div>
+        <div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:15px;">${p.name[0]}</div>
+        <span style="font-size:16px;font-weight:${rank===0?700:400};">${esc(p.name)}</span>
+      </div>
+      <div class="score-pts" style="font-size:${rank===0?22:16}px;">${p.score} pt</div>
+    </div>`).join('');
+
+  document.getElementById('final-winner-msg').innerHTML = `
+    <div style="font-size:19px;font-weight:700;color:#4a1f8a;margin-bottom:8px;">
+      🎉 ${esc(sorted[0].name)}さんの勝ち！
+    </div>
+    <div style="font-size:13px;color:#6b3fa0;line-height:1.8;">
+      「言われたい言葉」を一番多く当てたのは${esc(sorted[0].name)}さんでした。<br>
+      どんな言葉が響いたか、もう少し語り合ってみよう！
+    </div>`;
+
+  showScreen('screen-end');
+}
+
+function restartGame() { initSetup(); showScreen('screen-setup'); }
+
+// ===== UTILS =====
+function shuffle(arr) {
+  for (let i = arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== INIT =====
+initSetup();
+</script>
+</body>
+</html>
