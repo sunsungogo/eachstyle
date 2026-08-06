@@ -34,8 +34,19 @@ body {
   font-size: 16px; font-weight: 700; cursor: pointer;
   border: none; font-family: inherit; text-align: center;
   transition: opacity .15s, transform .1s;
+  margin-left: auto; margin-right: auto;
 }
 .btn:active { transform: scale(.97); opacity: .85; }
+
+/* ===== DESKTOP LAYOUT ===== */
+@media (min-width: 520px) {
+  body { background: #ddd4f0; display: flex; justify-content: center; }
+  .screen {
+    width: 100%; max-width: 480px;
+    background: #f5f0ff;
+    box-shadow: 0 0 60px rgba(107,63,160,.15);
+  }
+}
 .btn-primary { background: #6b3fa0; color: #fff; }
 .btn-secondary { background: white; border: 2px solid #c4a0f0; color: #6b3fa0; margin-top: 10px; }
 
@@ -309,10 +320,10 @@ body {
 <!-- ===== REASON ===== -->
 <div id="screen-reason" class="screen">
   <div style="width:100%; max-width:360px; text-align:center;">
-    <div style="font-size:40px; margin-bottom:12px;">🎉</div>
+    <div id="reason-emoji" style="font-size:40px; margin-bottom:12px;">🎉</div>
     <div class="status-box">
       <h2 id="winner-name-display"></h2>
-      <p>さんの回答が選ばれました！</p>
+      <p id="reason-status-text">さんの回答が選ばれました！</p>
     </div>
     <div id="winning-answer-card" class="answer-card winner" style="text-align:left; margin-bottom:16px;"></div>
     <div class="reason-box">
@@ -381,6 +392,7 @@ let G = {
   players: [], scores: [], deck: [],
   activeIdx: 0, currentCard: null,
   answers: [], nonActive: [], answererPos: 0,
+  twoPlayerMode: false,
 };
 
 // ===== SCREEN =====
@@ -424,6 +436,7 @@ function startGame() {
   G.scores = new Array(names.length).fill(0);
   G.deck = shuffle([...CARDS]);
   G.activeIdx = 0;
+  G.twoPlayerMode = (names.length === 2);
   beginTurn();
 }
 
@@ -509,16 +522,37 @@ function showReveal() {
   document.getElementById('reveal-active-name').textContent = ap.name;
   const list = document.getElementById('answers-list');
   list.innerHTML = '';
-  shuffle([...G.answers]).forEach(ans => {
+
+  if (G.twoPlayerMode) {
+    // 2人モード：YES / NO 方式
+    const ans = G.answers[0];
     const p = G.players[ans.playerIdx];
-    const div = document.createElement('div');
-    div.className = 'answer-card';
-    div.innerHTML = `
-      <div class="answer-by">${esc(p.name)}</div>
-      <div class="answer-text">${esc(ans.text)}</div>
-      <button class="choose-btn" onclick="pickWinner(${ans.playerIdx})">これ！ &nbsp;♡</button>`;
-    list.appendChild(div);
-  });
+    list.innerHTML = `
+      <div class="answer-card" style="text-align:left; margin-bottom:20px;">
+        <div class="answer-by">${esc(p.name)} より</div>
+        <div class="answer-text" style="font-size:19px; font-weight:700; padding:8px 0 4px;">${esc(ans.text)}</div>
+      </div>
+      <div style="font-size:13px; color:#6b3fa0; margin-bottom:18px; text-align:center; font-weight:700;">
+        この言葉、響いた？
+      </div>
+      <button class="btn btn-primary" onclick="pickWinner(${ans.playerIdx})" style="margin-bottom:10px;">
+        💜 共感した！（${esc(p.name)}に1pt）
+      </button>
+      <button class="btn btn-secondary" onclick="pickNoWinner(${ans.playerIdx})">
+        うーん… 違うかも
+      </button>`;
+  } else {
+    shuffle([...G.answers]).forEach(ans => {
+      const p = G.players[ans.playerIdx];
+      const div = document.createElement('div');
+      div.className = 'answer-card';
+      div.innerHTML = `
+        <div class="answer-by">${esc(p.name)}</div>
+        <div class="answer-text">${esc(ans.text)}</div>
+        <button class="choose-btn" onclick="pickWinner(${ans.playerIdx})">これ！ &nbsp;♡</button>`;
+      list.appendChild(div);
+    });
+  }
   showScreen('screen-reveal');
 }
 
@@ -527,6 +561,8 @@ function pickWinner(winnerIdx) {
   const winAns = G.answers.find(a => a.playerIdx === winnerIdx);
   G.scores[winnerIdx]++;
 
+  document.getElementById('reason-emoji').textContent = '🎉';
+  document.getElementById('reason-status-text').textContent = 'さんの回答が選ばれました！';
   document.getElementById('winner-name-display').textContent = winner.name;
   document.getElementById('winning-answer-card').innerHTML = `
     <div class="answer-by">${esc(winner.name)} &nbsp;♡</div>
@@ -534,8 +570,25 @@ function pickWinner(winnerIdx) {
 
   const ap = G.players[G.activeIdx];
   document.getElementById('reason-text').textContent =
-    `${ap.name}さん、なぜ「${winner.name}さん」の言葉を選んだか話してみよう。`
-    + `どんな気持ちが嬉しかった？`;
+    `${ap.name}さん、なぜ「${winner.name}さん」の言葉を選んだか話してみよう。どんな気持ちが嬉しかった？`;
+
+  showScreen('screen-reason');
+}
+
+function pickNoWinner(answererIdx) {
+  const ans = G.answers.find(a => a.playerIdx === answererIdx);
+  const answerer = G.players[answererIdx];
+  const ap = G.players[G.activeIdx];
+
+  document.getElementById('reason-emoji').textContent = '💭';
+  document.getElementById('reason-status-text').textContent = 'さんの言葉でした。';
+  document.getElementById('winner-name-display').textContent = answerer.name;
+  document.getElementById('winning-answer-card').innerHTML = `
+    <div class="answer-by">${esc(answerer.name)} より</div>
+    <div class="answer-text">${esc(ans.text)}</div>`;
+
+  document.getElementById('reason-text').textContent =
+    `今回はちょっと違ったみたい。${ap.name}さん、どんな言葉が欲しかった？話してみよう。`;
 
   showScreen('screen-reason');
 }
