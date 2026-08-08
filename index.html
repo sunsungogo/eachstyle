@@ -175,6 +175,28 @@ body {
 .progress-fill { height: 100%; background: #6b3fa0; border-radius: 6px; transition: width .4s; }
 .progress-label { font-size: 12px; color: #9b6fd0; text-align: right; margin-bottom: 4px; }
 
+/* ===== SOLO MODE ===== */
+.solo-badge {
+  display: inline-block; background: #f0e8ff;
+  color: #6b3fa0; font-size: 11px; font-weight: 700;
+  letter-spacing: .15em; padding: 4px 12px; border-radius: 20px;
+  border: 1.5px solid #c4a0f0; margin-bottom: 16px;
+}
+.solo-reflect-word {
+  width: 100%; max-width: 360px;
+  background: #6b3fa0; border-radius: 16px;
+  padding: 22px 20px; margin-bottom: 18px; text-align: center;
+}
+.solo-reflect-word .word-label { font-size: 11px; color: #d4b8f5; letter-spacing: .15em; margin-bottom: 8px; }
+.solo-reflect-word .word-text  { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.5; }
+.solo-journal-item {
+  width: 100%; max-width: 360px;
+  background: white; border: 1.5px solid #d4b8f5;
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; text-align: left;
+}
+.solo-journal-situation { font-size: 11px; color: #9b6fd0; margin-bottom: 4px; }
+.solo-journal-word { font-size: 16px; font-weight: 700; color: #4a1f8a; }
+
 /* ===== REASON BOX ===== */
 .reason-box {
   width: 100%; max-width: 360px;
@@ -198,6 +220,7 @@ body {
       <strong style="color:#5a2fa0;">あなたが求める言葉</strong>を、みんなで探そう。
     </p>
     <button class="btn btn-primary" onclick="showScreen('screen-setup')">ゲームを始める</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-solo-setup')" style="margin-top:10px;">ひとりで考える</button>
     <button class="btn btn-secondary" onclick="showScreen('screen-rules')">遊び方を見る</button>
   </div>
   <div style="margin-top:auto; font-size:11px; color:#ccc; padding-top:24px;">EACH STYLE</div>
@@ -341,6 +364,78 @@ body {
     <div id="score-list" style="width:100%; margin-bottom:20px;"></div>
     <div id="deck-remaining-box" style="background:#f0eaff; border-radius:12px; padding:12px 16px; margin-bottom:24px; font-size:13px; color:#6b3fa0;"></div>
     <button class="btn btn-primary" id="score-next-btn" onclick="continueFromScore()"></button>
+  </div>
+</div>
+
+<!-- ===== SOLO SETUP ===== -->
+<div id="screen-solo-setup" class="screen">
+  <div style="width:100%; max-width:360px;">
+    <div style="text-align:center; margin-bottom:28px;">
+      <div class="logo-sm">C A R D &nbsp; G A M E</div>
+      <div class="game-title">いーちすたいる</div>
+      <div class="game-en">E A C H &nbsp; S T Y L E</div>
+      <div class="solo-badge">🪞 ひとりで考えるモード</div>
+      <p style="font-size:13px; color:#555; line-height:1.9;">
+        カードの状況で、あなたが<strong style="color:#5a2fa0;">一番言われたい言葉</strong>を考えよう。<br>
+        全部終わったら、あなただけの<br>「言葉の取扱説明書」ができあがる。
+      </p>
+    </div>
+    <div style="font-size:13px; color:#6b3fa0; margin-bottom:10px; font-weight:700;">あなたの名前</div>
+    <div class="player-input-row" style="margin-bottom:24px;">
+      <input type="text" id="solo-name-input" placeholder="名前を入力" maxlength="10" style="flex:1; padding:11px 14px; border:1.5px solid #c4a0f0; border-radius:10px; font-size:15px; font-family:inherit; background:white; color:#2d2d2d;">
+    </div>
+    <button class="btn btn-primary" onclick="startSoloGame()">はじめる →</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">タイトルへ戻る</button>
+  </div>
+</div>
+
+<!-- ===== SOLO CARD ===== -->
+<div id="screen-solo-card" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div class="solo-badge">🪞 ひとりで考えるモード</div>
+    <div id="solo-progress-area" class="progress-wrap"></div>
+    <div id="solo-card-display" style="margin-bottom:18px;"></div>
+    <div style="font-size:13px; color:#6b3fa0; font-weight:700; margin-bottom:10px;">
+      この状況で、あなたが言われたい言葉は？
+    </div>
+    <textarea class="answer-textarea" id="solo-answer-input" rows="3"
+      placeholder="ひとことでも、長くても。"></textarea>
+    <button class="btn btn-primary" onclick="submitSoloAnswer()">書けた →</button>
+  </div>
+</div>
+
+<!-- ===== SOLO REFLECT ===== -->
+<div id="screen-solo-reflect" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div class="solo-badge">🪞 ひとりで考えるモード</div>
+    <div style="font-size:13px; color:#9b6fd0; margin-bottom:14px;">あなたが言われたい言葉</div>
+    <div class="solo-reflect-word">
+      <div class="word-label">あなたの言葉</div>
+      <div class="word-text" id="solo-reflect-word-text"></div>
+    </div>
+    <div class="reason-box" style="text-align:left;">
+      <div class="reason-label">💭 少しだけ考えてみよう</div>
+      <p id="solo-reflect-prompt"></p>
+    </div>
+    <button class="btn btn-primary" id="solo-next-btn" onclick="soloNextCard()">次のカードへ →</button>
+    <button class="btn btn-secondary" onclick="endSoloGame()" style="margin-top:10px;">ここで終わる</button>
+  </div>
+</div>
+
+<!-- ===== SOLO END ===== -->
+<div id="screen-solo-end" class="screen">
+  <div style="width:100%; max-width:360px; text-align:center;">
+    <div style="font-size:40px; margin-bottom:8px;">🪞</div>
+    <div class="logo-sm">C A R D &nbsp; G A M E</div>
+    <div class="game-title" style="font-size:26px; margin-bottom:4px;">言葉の取扱説明書</div>
+    <div style="font-size:12px; color:#8b5ad2; letter-spacing:.15em; margin-bottom:20px;" id="solo-end-name"></div>
+    <div id="solo-journal-list" style="width:100%; margin-bottom:24px;"></div>
+    <div style="background:#e8d5f5; border-radius:14px; padding:16px; margin-bottom:24px; font-size:13px; color:#4a1f8a; line-height:1.8;">
+      これがあなたが言われたい言葉たち。<br>
+      誰かに見せてみると、新しい会話が生まれるかも。
+    </div>
+    <button class="btn btn-primary" onclick="restartSoloGame()">もう一度やってみる</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">タイトルへ</button>
   </div>
 </div>
 
@@ -650,6 +745,85 @@ function endGame() {
 }
 
 function restartGame() { initSetup(); showScreen('screen-setup'); }
+
+// ===== SOLO MODE =====
+let S = { name: '', deck: [], answers: [] };
+
+function startSoloGame() {
+  const name = document.getElementById('solo-name-input').value.trim() || 'あなた';
+  S.name = name;
+  S.deck = shuffle([...CARDS]);
+  S.answers = [];
+  soloNextCard();
+}
+
+function soloNextCard() {
+  if (!S.deck.length) { endSoloGame(); return; }
+  const card = S.deck.pop();
+  S.currentCard = card;
+
+  const total = CARDS.length;
+  const done  = total - S.deck.length - 1;
+  const pct   = Math.round((done / total) * 100);
+  document.getElementById('solo-progress-area').innerHTML = `
+    <div class="progress-label">残り ${S.deck.length + 1} 枚 / ${total} 枚</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+
+  const el = document.getElementById('solo-card-display');
+  if (card.img) {
+    const img = new Image();
+    img.onload  = () => { el.innerHTML = `<div class="game-card"><img class="game-card-img" src="${card.img}" alt="${card.title}"></div>`; };
+    img.onerror = () => { el.innerHTML = cssCard(card); };
+    img.src = card.img;
+  } else {
+    el.innerHTML = cssCard(card);
+  }
+
+  document.getElementById('solo-answer-input').value = '';
+  showScreen('screen-solo-card');
+  setTimeout(() => document.getElementById('solo-answer-input').focus(), 80);
+}
+
+function submitSoloAnswer() {
+  const text = document.getElementById('solo-answer-input').value.trim();
+  if (!text) { alert('言葉を入力してください！'); return; }
+
+  S.answers.push({ card: S.currentCard, word: text });
+
+  document.getElementById('solo-reflect-word-text').textContent = text;
+
+  const prompts = [
+    `「${text}」——なぜその言葉が欲しかった？ 少しだけ考えてみよう。`,
+    `その言葉を言ってくれる人が、あなたの周りにいる？`,
+    `「${text}」と言われたら、どんな気持ちになりそう？`,
+    `その言葉を、自分自身に言ってあげるとしたら？`,
+  ];
+  const p = prompts[S.answers.length % prompts.length];
+  document.getElementById('solo-reflect-prompt').textContent = p;
+
+  const btn = document.getElementById('solo-next-btn');
+  btn.textContent = S.deck.length > 0 ? '次のカードへ →' : '結果を見る →';
+
+  showScreen('screen-solo-reflect');
+}
+
+function endSoloGame() {
+  document.getElementById('solo-end-name').textContent = `${S.name}さんの言葉たち`;
+
+  const list = document.getElementById('solo-journal-list');
+  list.innerHTML = S.answers.map(a => `
+    <div class="solo-journal-item">
+      <div class="solo-journal-situation">${esc(a.card.title)} ／ ${esc(a.card.serif)}</div>
+      <div class="solo-journal-word">「${esc(a.word)}」</div>
+    </div>`).join('');
+
+  showScreen('screen-solo-end');
+}
+
+function restartSoloGame() {
+  document.getElementById('solo-name-input').value = S.name;
+  showScreen('screen-solo-setup');
+}
 
 // ===== UTILS =====
 function shuffle(arr) {
