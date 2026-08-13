@@ -271,12 +271,33 @@ body {
       <div class="game-en">E A C H &nbsp; S T Y L E</div>
     </div>
 
-    <div style="font-size:13px; color:#6b3fa0; margin-bottom:12px; font-weight:700;">プレイヤー名を入力（2〜8人）</div>
+    <div style="background:#e8d5f5; border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:#4a1f8a; line-height:1.8;">
+      🎮 推奨人数 <strong>3〜8人</strong>（2人モードもあり）<br>
+      <span style="font-size:12px; color:#6b3fa0;">全員で1台のスマホを囲んでプレイします</span>
+    </div>
+    <div style="font-size:13px; color:#6b3fa0; margin-bottom:12px; font-weight:700;">プレイヤー名を入力</div>
     <div id="player-inputs"></div>
     <button class="add-player-btn" id="add-btn" onclick="addPlayerInput()">＋ プレイヤーを追加</button>
 
     <button class="btn btn-primary" onclick="startGame()">ゲームスタート！</button>
     <button class="btn btn-secondary" onclick="showScreen('screen-title')">タイトルへ戻る</button>
+  </div>
+</div>
+
+<!-- ===== CARD PEEK（全員でお題確認） ===== -->
+<div id="screen-card-peek" class="screen">
+  <div style="width:100%; text-align:center;">
+    <div id="peek-progress-area" class="progress-wrap"></div>
+    <div style="background:#4a1f8a; border-radius:10px; padding:8px 18px; margin-bottom:18px; display:inline-block;">
+      <span style="color:#c4a0f0; font-size:12px;">👀 みんなでお題を確認しよう</span>
+    </div>
+    <div id="card-peek-display"></div>
+    <div style="height:16px;"></div>
+    <p style="font-size:13px; color:#6b3fa0; margin-bottom:20px; line-height:1.9; max-width:300px; margin-left:auto; margin-right:auto;">
+      全員で読んだら、次はアクティブプレイヤーに<br>
+      <strong style="color:#4a1f8a;">目を閉じて</strong>もらいます。
+    </p>
+    <button class="btn btn-primary" onclick="confirmCardPeek()">全員確認できた →</button>
   </div>
 </div>
 
@@ -289,9 +310,9 @@ body {
     <p>さん、目を閉じてください！<br>他のプレイヤーだけカードを見ます。</p>
   </div>
   <p style="font-size:13px; color:#6b3fa0; margin-bottom:20px; text-align:center;">
-    目を閉じたことを確認してから<br>カードを表示します
+    目を閉じたことを確認してから<br>他のプレイヤーが回答します
   </p>
-  <button class="btn btn-primary" onclick="revealCard()">カードを表示する →</button>
+  <button class="btn btn-primary" onclick="startAnswers()">回答を集める →</button>
 </div>
 
 <!-- ===== CARD REVEAL ===== -->
@@ -324,6 +345,9 @@ body {
       placeholder="あなたなら何と言いますか？"></textarea>
 
     <div style="font-size:12px; color:#9b6fd0; margin-bottom:12px;" id="answer-count-label"></div>
+    <div id="two-player-hint" style="display:none; background:#fff3cd; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:12px; color:#856404; line-height:1.8;">
+      📱 入力後、アクティブプレイヤーに画面を渡してね
+    </div>
 
     <button class="btn btn-primary" onclick="submitAnswer()">送信する →</button>
   </div>
@@ -546,6 +570,24 @@ function beginTurn() {
   document.getElementById('active-name-display').textContent = ap.name;
   document.getElementById('looking-away-label').textContent = `👁️ ${ap.name}さんは目を閉じています`;
   renderProgress();
+
+  // まず全員でカードを確認する
+  const card = G.currentCard;
+  const el = document.getElementById('card-peek-display');
+  document.getElementById('peek-progress-area').innerHTML =
+    document.getElementById('progress-area').innerHTML;
+  if (card.img) {
+    const img = new Image();
+    img.onload = () => { el.innerHTML = `<div class="game-card"><img class="game-card-img" src="${card.img}" alt="${card.title}"></div>`; };
+    img.onerror = () => { el.innerHTML = cssCard(card); };
+    img.src = card.img;
+  } else {
+    el.innerHTML = cssCard(card);
+  }
+  showScreen('screen-card-peek');
+}
+
+function confirmCardPeek() {
   showScreen('screen-turn-start');
 }
 
@@ -600,6 +642,9 @@ function nextAnswerer() {
   document.getElementById('answer-input').value = '';
   document.getElementById('answer-count-label').textContent =
     `${G.answererPos+1} / ${G.nonActive.length} 人目`;
+  // 2人モードのヒントを表示
+  const hint = document.getElementById('two-player-hint');
+  if (hint) hint.style.display = G.twoPlayerMode ? 'block' : 'none';
   showScreen('screen-answer');
   setTimeout(() => document.getElementById('answer-input').focus(), 80);
 }
