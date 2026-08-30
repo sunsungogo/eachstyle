@@ -340,20 +340,27 @@ function handleRoomUpdate(room) {
       // Active player: close eyes
       document.getElementById('active-wait-progress').textContent =
         `${doneCount} / ${totalAnswerers} 人が回答済み`;
-      // Host+active: show reveal button when done
       const allDone = doneCount >= totalAnswerers;
       document.getElementById('active-wait-ctrl').innerHTML = (isHost && allDone)
         ? '<button class="btn btn-primary" onclick="hostReveal()">回答を公開する →</button>'
         : (allDone ? '<div class="waiting-hint">ホストが公開します…</div>' : '');
       showScreen('screen-active-wait');
-    } else if (isHost && !amActive) {
-      // Host not active: show collecting dashboard
-      renderCollecting(room, order, activeId, players, doneCount, totalAnswerers, answerers);
-      showScreen('screen-collecting');
     } else {
-      // Non-active, non-host: show answer input
-      renderAnswerInput(room, activeId, players, answers);
-      showScreen('screen-answering');
+      // Non-active player (host or not): answer first, then host sees collecting
+      const myAnswerDone = answers[myId] !== undefined;
+      if (!myAnswerDone) {
+        // 未回答 → 回答入力画面
+        renderAnswerInput(room, activeId, players, answers);
+        showScreen('screen-answering');
+      } else if (isHost) {
+        // ホストは回答済み → 収集ダッシュボード＋公開ボタン
+        renderCollecting(room, order, activeId, players, doneCount, totalAnswerers, answerers);
+        showScreen('screen-collecting');
+      } else {
+        // 非ホストは回答済み → 送信済み表示で待機
+        renderAnswerInput(room, activeId, players, answers);
+        showScreen('screen-answering');
+      }
     }
     return;
   }
