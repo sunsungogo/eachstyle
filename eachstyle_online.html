@@ -472,16 +472,22 @@ function renderReveal(room, order, activeId, amActive, players) {
 
   if (winnerKey) {
     const winnerName = players[winnerKey]?.name || '';
-    const winnerScore = players[winnerKey]?.score || 0; // pickAnswerで既に+1済み
+    const winnerScore = (players[winnerKey]?.score || 0) + 1; // 表示上+1（実際の更新はhostNextTurn）
     document.getElementById('reveal-winner-msg').innerHTML = `
       <div class="info-box" style="text-align:center;">
         🎉 <strong>${esc(players[activeId]?.name||'')}さん</strong>が選んだのは<br>
         <strong style="font-size:18px;">${esc(winnerName)}</strong>さんの言葉！<br>
         <span style="font-size:13px;color:#8b5ad2;">+1pt → 合計 ${winnerScore}pt</span>
       </div>`;
-    document.getElementById('reveal-ctrl').innerHTML = isHost
-      ? '<button class="btn btn-primary" onclick="hostNextTurn()">次のターンへ →</button>'
-      : '<div class="waiting-hint">ホストを待っています…</div>';
+    if (isHost) {
+      document.getElementById('reveal-ctrl').innerHTML = '<div class="waiting-hint">…</div>';
+      setTimeout(() => {
+        document.getElementById('reveal-ctrl').innerHTML =
+          '<button class="btn btn-primary" onclick="hostNextTurn()">次のターンへ →</button>';
+      }, 1500);
+    } else {
+      document.getElementById('reveal-ctrl').innerHTML = '<div class="waiting-hint">ホストを待っています…</div>';
+    }
   } else {
     document.getElementById('reveal-winner-msg').innerHTML = amActive
       ? ''
@@ -571,6 +577,11 @@ async function hostNextTurn() {
   const snap = await rRef().once('value');
   const room = snap.val();
   const order = room.playerOrder;
+  const winnerKey = room.winnerKey;
+  if (winnerKey && room.players[winnerKey] !== undefined) {
+    const cur = room.players[winnerKey].score || 0;
+    await rRef('players/' + winnerKey + '/score').set(cur + 1);
+  }
   const nextIdx = (room.activeIdx + 1) % order.length;
   await rRef('activeIdx').set(nextIdx);
   const updatedSnap = await rRef().once('value');
@@ -603,13 +614,7 @@ async function submitAnswer() {
 
 async function pickAnswer(key) {
   if (!lastRoom || lastRoom.winnerKey) return;
-  // スコアをここで即反映する（hostNextTurnより先に全員に見せるため）
-  const players = lastRoom.players || {};
-  const newScore = (players[key]?.score || 0) + 1;
-  await rRef().update({
-    winnerKey: key,
-    ['players/' + key + '/score']: newScore
-  });
+  await rRef().update({ winnerKey: key });
 }
 
 // ===== LEAVE =====
