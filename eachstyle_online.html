@@ -472,10 +472,12 @@ function renderReveal(room, order, activeId, amActive, players) {
 
   if (winnerKey) {
     const winnerName = players[winnerKey]?.name || '';
+    const winnerScore = (players[winnerKey]?.score || 0) + 1; // +1 反映前なので+1して表示
     document.getElementById('reveal-winner-msg').innerHTML = `
       <div class="info-box" style="text-align:center;">
         🎉 <strong>${esc(players[activeId]?.name||'')}さん</strong>が選んだのは<br>
-        <strong style="font-size:18px;">${esc(winnerName)}</strong>さんの言葉！
+        <strong style="font-size:18px;">${esc(winnerName)}</strong>さんの言葉！<br>
+        <span style="font-size:13px;color:#8b5ad2;">+1pt → 合計 ${winnerScore}pt</span>
       </div>`;
     document.getElementById('reveal-ctrl').innerHTML = isHost
       ? '<button class="btn btn-primary" onclick="hostNextTurn()">次のターンへ →</button>'
