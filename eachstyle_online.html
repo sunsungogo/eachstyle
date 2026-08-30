@@ -423,11 +423,9 @@ function renderAnswerInput(room, activeId, players, answers) {
   document.getElementById('ans-ctrl').innerHTML = alreadyAnswered
     ? '<div style="color:#6b3fa0;font-size:14px;font-weight:700;padding:12px;text-align:center;">✅ 送信済み！他の人を待ってます…</div>'
     : '<button class="btn btn-primary" onclick="submitAnswer()">回答を送る →</button>';
-  if (alreadyAnswered) {
-    document.getElementById('my-answer').disabled = true;
-  } else {
-    document.getElementById('my-answer').disabled = false;
-  }
+  const ta = document.getElementById('my-answer');
+  ta.disabled = alreadyAnswered;
+  if (!alreadyAnswered) ta.value = ''; // ターンが変わったらクリア
 }
 
 // ===== RENDER COLLECTING (host) =====
