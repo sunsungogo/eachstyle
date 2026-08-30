@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>いーちすたいる — オンライン</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif; background: #f5f0ff; color: #2d2d2d; min-height: 100vh; }
+.screen { display: none; min-height: 100vh; padding: 24px 20px 48px; flex-direction: column; align-items: center; }
+.screen.active { display: flex; }
+@media (min-width: 520px) {
+  body { background: #ddd4f0; display: flex; justify-content: center; }
+  .screen { width: 100%; max-width: 480px; background: #f5f0ff; box-shadow: 0 0 60px rgba(107,63,160,.15); }
+}
+.btn { display: block; width: 100%; max-width: 360px; padding: 15px 20px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; text-align: center; transition: opacity .15s, transform .1s; margin: 6px auto; }
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn-primary { background: #6b3fa0; color: #fff; }
+.btn-secondary { background: white; border: 2px solid #c4a0f0; color: #6b3fa0; }
+.logo-sm { font-size: 11px; letter-spacing: .2em; color: #9b6fd0; margin-bottom: 4px; text-align: center; }
+.game-title { font-size: 36px; font-weight: 700; color: #4a1f8a; text-align: center; line-height: 1.1; }
+.game-en { font-size: 12px; letter-spacing: .22em; color: #8b5ad2; text-align: center; margin-bottom: 28px; }
+.room-code-big { font-size: 52px; font-weight: 900; color: #4a1f8a; letter-spacing: .25em; text-align: center; background: #e8d5f5; border-radius: 16px; padding: 16px 24px; margin: 12px 0; }
+.input-field { width: 100%; max-width: 360px; padding: 13px 16px; border: 1.5px solid #c4a0f0; border-radius: 12px; font-size: 16px; font-family: inherit; background: white; color: #2d2d2d; margin-bottom: 12px; display: block; }
+.player-pill { display: inline-flex; align-items: center; gap: 6px; background: #e8d5f5; border-radius: 20px; padding: 8px 16px; margin: 4px; font-size: 14px; color: #4a1f8a; font-weight: 600; }
+.status-chip { background: #4a1f8a; color: #d4b8f5; font-size: 12px; letter-spacing: .1em; padding: 6px 18px; border-radius: 20px; display: inline-block; margin-bottom: 16px; }
+.answer-card { background: white; border: 2px solid #e8d5f5; border-radius: 14px; padding: 16px; margin: 8px 0; width: 100%; max-width: 360px; cursor: pointer; transition: border-color .15s, background .15s; text-align: left; }
+.answer-card:hover { border-color: #6b3fa0; }
+.answer-card.selected { border-color: #6b3fa0; background: #f0e8ff; }
+.answer-textarea { width: 100%; max-width: 360px; padding: 14px; border: 1.5px solid #c4a0f0; border-radius: 12px; font-size: 15px; font-family: inherit; resize: none; margin-bottom: 12px; display: block; }
+.game-card { background: white; border-radius: 16px; border: 2px solid #c4a0f0; overflow: hidden; box-shadow: 0 4px 20px rgba(107,63,160,.15); width: 100%; max-width: 280px; margin: 0 auto 18px; }
+.game-card-img { width: 100%; display: block; }
+.game-card-header { background: #6b3fa0; padding: 12px 16px; }
+.game-card-tag { font-size: 9px; letter-spacing: .2em; color: #d4b8f5; margin-bottom: 4px; }
+.game-card-title { font-size: 20px; font-weight: 700; color: white; }
+.game-card-illust { background: #ece5fa; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+.game-card-serif { padding: 14px 16px; font-size: 13px; color: #444; line-height: 1.9; border-top: 1px solid #f0e8ff; }
+.game-card-footer { background: #f5f0ff; padding: 7px 16px; font-size: 9px; color: #9b6fd0; letter-spacing: .15em; text-align: right; }
+.score-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 12px; margin-bottom: 8px; font-weight: 600; width: 100%; }
+.collect-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0e8ff; width: 100%; max-width: 360px; }
+.sub-label { font-size: 12px; color: #9b6fd0; margin-bottom: 8px; }
+.info-box { background: #e8d5f5; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: #4a1f8a; line-height: 1.9; width: 100%; max-width: 360px; text-align: left; }
+.waiting-hint { color: #9b6fd0; font-size: 13px; margin-top: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ===== TITLE ===== -->
+<div id="screen-title" class="screen active">
+  <div style="width:100%;max-width:360px;text-align:center;margin-top:48px;">
+    <div class="logo-sm">C A R D &nbsp; G A M E &nbsp; · &nbsp; O N L I N E</div>
+    <div class="game-title">いーちすたいる</div>
+    <div class="game-en">E A C H &nbsp; S T Y L E</div>
+    <div class="info-box" style="text-align:center;">
+      それぞれのスマホから参加。<br>「言われたい言葉」は人それぞれ。
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('screen-create')">ルームを作る 👑</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-join')">ルームに参加する</button>
+    <div style="margin-top:28px;">
+      <a href="eachstyle_game.html" style="color:#9b6fd0;font-size:13px;">← 1台でプレイするモードへ</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CREATE ===== -->
+<div id="screen-create" class="screen">
+  <div style="width:100%;max-width:360px;margin-top:48px;">
+    <div class="logo-sm" style="text-align:center;">ルームを作る</div>
+    <div class="game-title" style="font-size:26px;margin-bottom:24px;">あなたの名前</div>
+    <input class="input-field" id="host-name" type="text" placeholder="名前を入力（10字以内）" maxlength="10">
+    <button class="btn btn-primary" onclick="handleCreate()">ルームを作成 →</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">もどる</button>
+  </div>
+</div>
+
+<!-- ===== JOIN ===== -->
+<div id="screen-join" class="screen">
+  <div style="width:100%;max-width:360px;margin-top:48px;">
+    <div class="logo-sm" style="text-align:center;">ルームに参加</div>
+    <div class="game-title" style="font-size:26px;margin-bottom:24px;">参加情報を入力</div>
+    <input class="input-field" id="join-code" type="text" placeholder="ルームコード（4桁）" maxlength="4" inputmode="numeric" style="font-size:24px;letter-spacing:.25em;text-align:center;">
+    <input class="input-field" id="join-name" type="text" placeholder="あなたの名前（10字以内）" maxlength="10">
+    <button class="btn btn-primary" onclick="handleJoin()">参加する →</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">もどる</button>
+  </div>
+</div>
+
+<!-- ===== LOBBY ===== -->
+<div id="screen-lobby" class="screen">
+  <div style="width:100%;max-width:360px;text-align:center;margin-top:24px;">
+    <div class="sub-label">ルームコード</div>
+    <div class="room-code-big" id="lobby-code">----</div>
+    <div style="font-size:12px;color:#9b6fd0;margin-bottom:20px;">このコードを友達に共有してね</div>
+    <div style="font-size:13px;font-weight:700;color:#4a1f8a;margin-bottom:10px;">参加中のプレイヤー</div>
+    <div id="lobby-players" style="margin-bottom:20px;"></div>
+    <div id="lobby-ctrl"></div>
+  </div>
+</div>
+
+<!-- ===== CARD PEEK (全員確認) ===== -->
+<div id="screen-peek" class="screen">
+  <div style="width:100%;max-width:360px;text-align:center;">
+    <div class="status-chip">👀 みんなでお題を確認</div>
+    <div id="peek-card"></div>
+    <p style="font-size:13px;color:#6b3fa0;margin-bottom:20px;line-height:2;">
+      全員で読んだら、<strong id="peek-active-name" style="color:#4a1f8a;"></strong>に<br>
+      <strong>目を閉じて</strong>もらいましょう。
+    </p>
+    <div id="peek-ctrl"></div>
+  </div>
+</div>
+
+<!-- ===== ACTIVE PLAYER: 目を閉じる ===== -->
+<div id="screen-active-wait" class="screen">
+  <div style="width:100%;max-width:360px;text-align:center;margin-top:64px;">
+    <div style="font-size:64px;margin-bottom:20px;">🙈</div>
+    <div class="game-title" style="font-size:22px;margin-bottom:12px;">目を閉じてください</div>
+    <p style="font-size:14px;color:#6b3fa0;line-height:1.9;margin-bottom:28px;">
+      他のプレイヤーが回答中です。<br>合図があるまで待ってね。
+    </p>
+    <div id="active-wait-progress" style="font-size:14px;color:#8b5ad2;font-weight:700;margin-bottom:16px;"></div>
+    <div id="active-wait-ctrl"></div>
+  </div>
+</div>
+
+<!-- ===== ANSWER INPUT (非アクティブプレイヤー) ===== -->
+<div id="screen-answering" class="screen">
+  <div style="width:100%;max-width:360px;">
+    <div class="status-chip" style="display:block;text-align:center;margin-bottom:16px;">✍️ 回答タイム</div>
+    <div class="info-box">
+      <div style="font-size:10px;letter-spacing:.15em;color:#8b5ad2;margin-bottom:4px;">お 題</div>
+      <div style="font-weight:700;color:#4a1f8a;font-size:16px;" id="ans-card-title"></div>
+      <div style="font-size:13px;color:#555;margin-top:6px;line-height:1.8;" id="ans-card-serif"></div>
+    </div>
+    <div style="font-size:13px;color:#4a1f8a;font-weight:700;margin-bottom:10px;text-align:center;">
+      <span id="ans-active-name"></span>さんに伝えたい言葉は？
+    </div>
+    <textarea class="answer-textarea" id="my-answer" rows="3" placeholder="ひとことでも、長くても。"></textarea>
+    <div id="ans-ctrl"></div>
+  </div>
+</div>
+
+<!-- ===== HOST: 回答収集 ===== -->
+<div id="screen-collecting" class="screen">
+  <div style="width:100%;max-width:360px;text-align:center;">
+    <div class="status-chip">📥 回答収集中</div>
+    <div id="collect-count" style="font-size:18px;font-weight:700;color:#4a1f8a;margin:12px 0;"></div>
+    <div id="collect-list" style="width:100%;"></div>
+    <div id="collect-ctrl" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- ===== REVEAL (全員の回答を表示) ===== -->
+<div id="screen-reveal" class="screen">
+  <div style="width:100%;max-width:360px;text-align:center;">
+    <div class="status-chip">💬 みんなの回答</div>
+    <div id="reveal-instruction" style="font-size:13px;color:#6b3fa0;margin-bottom:14px;"></div>
+    <div id="reveal-answers" style="width:100%;"></div>
+    <div id="reveal-winner-msg" style="margin-top:12px;width:100%;"></div>
+    <div id="reveal-ctrl"></div>
+  </div>
+</div>
+
+<!-- ===== END ===== -->
+<div id="screen-end" class="screen">
+  <div style="width:100%;max-width:360px;text-align:center;margin-top:32px;">
+    <div style="font-size:52px;margin-bottom:12px;">🏆</div>
+    <div class="logo-sm">C A R D &nbsp; G A M E</div>
+    <div class="game-title">いーちすたいる</div>
+    <div class="game-en" style="margin-bottom:20px;">F I N A L &nbsp; R E S U L T</div>
+    <div id="end-scores" style="width:100%;margin-bottom:20px;"></div>
+    <div id="end-winner" class="info-box" style="text-align:center;font-weight:700;font-size:16px;"></div>
+    <div id="end-ctrl" style="margin-top:16px;width:100%;"></div>
+    <button class="btn btn-secondary" onclick="leaveRoom()">タイトルへ</button>
+  </div>
+</div>
+
+<script>
+// ===== FIREBASE =====
+firebase.initializeApp({
+  apiKey: "AIzaSyBja1d-mwJY-s5m-zVC5c9n96Z0Fu9Euyc",
+  authDomain: "eachstyle-control.firebaseapp.com",
+  databaseURL: "https://eachstyle-control-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "eachstyle-control",
+  storageBucket: "eachstyle-control.firebasestorage.app",
+  messagingSenderId: "209363835607",
+  appId: "1:209363835607:web:d5b7cce974f52fb073ee92"
+});
+const db = firebase.database();
+
+// ===== CARD DATA =====
+const CARDS = [
+  { id:1,  title:"怒られた時",          serif:"ミーティングを忘れて、怒られちゃった…",                      img:"card_怒られた時.png"           },
+  { id:2,  title:"別れの時",            serif:"親友が来月から1年間の留学に行っちゃうんだ…",               img:"card_別れの時.png"             },
+  { id:3,  title:"寂しい時",            serif:"最近心がなんとなく寂しい気がする",                         img:"card_寂しい時.png"             },
+  { id:4,  title:"バズってた時",         serif:"SNSの投稿がバズって、通知が止まらない…！",                 img:"card_バズってた時.png"          },
+  { id:5,  title:"夕食会計の時",         serif:"あ…財布を置いてきちゃった",                              img:"card_夕食会計の時.png"          },
+  { id:6,  title:"〇〇直前",            serif:"今週空いている日ある？伝えたいことがあって…",               img:"card_〇〇直前.png"             },
+  { id:7,  title:"わがまま",            serif:"もうちょっとだけ一緒にいよう",                            img:"card_わがまま.png"             },
+  { id:8,  title:"別れた時",            serif:"昨日、別れた。何にも考えられない。",                       img:"card_別れた時.png"             },
+  { id:9,  title:"しんどい時",          serif:"疲れた。何もしたくない。でもやらないといけない事がある。",    img:"card_しんどい時.png"           },
+  { id:10, title:"だるい時",            serif:"だるすぎ。予定全部ブッチしようかな。",                     img:"card_だるい時.png"             },
+  { id:11, title:"遅刻40分",            serif:"ごめん40分遅れます。理由は後で言います。",                  img:"card_遅刻40分.png"             },
+  { id:12, title:"人肌恋しい時",         serif:"とにかく人肌が恋しい。頼れる人がほしい",                   img:"card_人肌恋しい時.png"          },
+  { id:13, title:"遅刻70分",            serif:"ごめん70分遅れます。理由は後で言います。",                  img:"card_遅刻70分.png"             },
+  { id:14, title:"心が沈んでいる時",     serif:"誰も私のことを愛してくれない…",                           img:"orig_心が沈んでいる時.png"      },
+  { id:15, title:"一人の時",            serif:"バイト先でなかなか友達ができない",                         img:"orig_一人の時.png"             },
+  { id:16, title:"でかい挑戦の時",      serif:"やっぱり自分には無理なのかな…",                           img:"orig_でかい挑戦の時.png"        },
+  { id:17, title:"体調が悪そうな時",    serif:"なんかだるいな、熱あるかも",                              img:"orig_体調が悪そうな時.png"      },
+  { id:18, title:"ちょっと急だけど",    serif:"ちょっと急だけど今夜話せる？",                             img:"orig_ちょっと急だけど.png"      },
+  { id:19, title:"友人のストーリーを見て", serif:"友達のストーリーなんかつらそうだった…",                  img:"card_友人のストーリーを見て.png" },
+];
+const CARD_MAP = Object.fromEntries(CARDS.map(c => [c.id, c]));
+
+// ===== LOCAL STATE =====
+let myId = sessionStorage.getItem('es_id') || genId();
+sessionStorage.setItem('es_id', myId);
+let myName = '';
+let roomCode = null;
+let isHost = false;
+let roomOff = null;  // unsubscribe fn
+let lastRoom = null;
+let shuffledAnswerKeys = []; // stable shuffle for reveal screen
+
+// ===== UTILS =====
+function genId() { return Math.random().toString(36).slice(2,10); }
+function genCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function rRef(path) {
+  return db.ref('rooms/' + roomCode + (path ? '/' + path : ''));
+}
+
+// ===== CREATE ROOM =====
+async function handleCreate() {
+  const name = document.getElementById('host-name').value.trim();
+  if (!name) { alert('名前を入力してね'); return; }
+  myName = name;
+  isHost = true;
+  roomCode = genCode();
+  const deckIds = shuffle(CARDS.map(c => c.id));
+  await rRef().set({
+    phase: 'lobby',
+    hostId: myId,
+    players: { [myId]: { name, score: 0 } },
+    playerOrder: [myId],
+    activeIdx: 0,
+    currentCardId: null,
+    answers: {},
+    winnerKey: null,
+    deckIds
+  });
+  document.getElementById('lobby-code').textContent = roomCode;
+  subscribeRoom();
+  showScreen('screen-lobby');
+}
+
+// ===== JOIN ROOM =====
+async function handleJoin() {
+  const code = document.getElementById('join-code').value.trim();
+  const name = document.getElementById('join-name').value.trim();
+  if (!code || code.length < 4) { alert('4桁のコードを入力してね'); return; }
+  if (!name) { alert('名前を入力してね'); return; }
+  const snap = await db.ref('rooms/' + code).once('value');
+  if (!snap.exists()) { alert('ルームが見つかりません'); return; }
+  const room = snap.val();
+  if (room.phase !== 'lobby') { alert('すでにゲームが始まっています'); return; }
+  myName = name;
+  roomCode = code;
+  isHost = false;
+  await rRef('players/' + myId).set({ name, score: 0 });
+  await rRef('playerOrder').transaction(order => {
+    if (!order) return [myId];
+    if (!order.includes(myId)) order.push(myId);
+    return order;
+  });
+  document.getElementById('lobby-code').textContent = roomCode;
+  subscribeRoom();
+  showScreen('screen-lobby');
+}
+
+// ===== SUBSCRIBE =====
+function subscribeRoom() {
+  if (roomOff) { roomOff(); roomOff = null; }
+  const ref = rRef();
+  const handler = snap => {
+    const room = snap.val();
+    if (!room) return;
+    lastRoom = room;
+    handleRoomUpdate(room);
+  };
+  ref.on('value', handler);
+  roomOff = () => ref.off('value', handler);
+}
+
+// ===== ROOM UPDATE HANDLER =====
+function handleRoomUpdate(room) {
+  const phase = room.phase;
+  const order = room.playerOrder || [room.hostId];
+  const activeId = order[room.activeIdx % order.length];
+  const amActive = myId === activeId;
+  const players = room.players || {};
+
+  // Always update lobby in background
+  renderLobby(room, order, players);
+
+  if (phase === 'lobby') {
+    showScreen('screen-lobby');
+    return;
+  }
+
+  if (phase === 'peek') {
+    renderPeek(room, order, activeId, players);
+    showScreen('screen-peek');
+    return;
+  }
+
+  if (phase === 'answering') {
+    const answers = room.answers || {};
+    const answerers = order.filter(id => id !== activeId);
+    const doneCount = Object.keys(answers).length;
+    const totalAnswerers = answerers.length;
+
+    if (amActive) {
+      // Active player: close eyes
+      document.getElementById('active-wait-progress').textContent =
+        `${doneCount} / ${totalAnswerers} 人が回答済み`;
+      // Host+active: show reveal button when done
+      const allDone = doneCount >= totalAnswerers;
+      document.getElementById('active-wait-ctrl').innerHTML = (isHost && allDone)
+        ? '<button class="btn btn-primary" onclick="hostReveal()">回答を公開する →</button>'
+        : (allDone ? '<div class="waiting-hint">ホストが公開します…</div>' : '');
+      showScreen('screen-active-wait');
+    } else if (isHost && !amActive) {
+      // Host not active: show collecting dashboard
+      renderCollecting(room, order, activeId, players, doneCount, totalAnswerers, answerers);
+      showScreen('screen-collecting');
+    } else {
+      // Non-active, non-host: show answer input
+      renderAnswerInput(room, activeId, players, answers);
+      showScreen('screen-answering');
+    }
+    return;
+  }
+
+  if (phase === 'reveal') {
+    renderReveal(room, order, activeId, amActive, players);
+    showScreen('screen-reveal');
+    return;
+  }
+
+  if (phase === 'end') {
+    renderEnd(room, order, players);
+    showScreen('screen-end');
+    return;
+  }
+}
+
+// ===== RENDER LOBBY =====
+function renderLobby(room, order, players) {
+  document.getElementById('lobby-code').textContent = roomCode;
+  const pillsHtml = order.map(id => {
+    const p = players[id];
+    if (!p) return '';
+    return `<span class="player-pill">
+      ${id === room.hostId ? '👑 ' : ''}${esc(p.name)}${id === myId ? ' (あなた)' : ''}
+    </span>`;
+  }).join('');
+  document.getElementById('lobby-players').innerHTML = pillsHtml;
+
+  if (isHost) {
+    const ok = order.length >= 2;
+    document.getElementById('lobby-ctrl').innerHTML = `
+      <button class="btn btn-primary" onclick="hostStartGame()" ${ok ? '' : 'disabled'}>
+        ゲームスタート →
+      </button>
+      ${!ok ? '<div class="waiting-hint">2人以上必要です</div>' : ''}`;
+  } else {
+    document.getElementById('lobby-ctrl').innerHTML =
+      '<div class="waiting-hint">ホストがゲームを開始するまで待ってね…</div>';
+  }
+}
+
+// ===== RENDER PEEK =====
+function renderPeek(room, order, activeId, players) {
+  const card = CARD_MAP[room.currentCardId];
+  document.getElementById('peek-active-name').textContent = players[activeId]?.name || '';
+  renderCard(card, 'peek-card');
+  document.getElementById('peek-ctrl').innerHTML = isHost
+    ? '<button class="btn btn-primary" onclick="hostStartAnswering()">全員確認できた →</button>'
+    : '<div class="waiting-hint">ホストの操作を待っています…</div>';
+}
+
+// ===== RENDER ANSWER INPUT =====
+function renderAnswerInput(room, activeId, players, answers) {
+  const card = CARD_MAP[room.currentCardId];
+  document.getElementById('ans-card-title').textContent = card?.title || '';
+  document.getElementById('ans-card-serif').textContent = card?.serif || '';
+  document.getElementById('ans-active-name').textContent = players[activeId]?.name || '';
+  const alreadyAnswered = answers[myId] !== undefined;
+  document.getElementById('ans-ctrl').innerHTML = alreadyAnswered
+    ? '<div style="color:#6b3fa0;font-size:14px;font-weight:700;padding:12px;text-align:center;">✅ 送信済み！他の人を待ってます…</div>'
+    : '<button class="btn btn-primary" onclick="submitAnswer()">回答を送る →</button>';
+  if (alreadyAnswered) {
+    document.getElementById('my-answer').disabled = true;
+  } else {
+    document.getElementById('my-answer').disabled = false;
+  }
+}
+
+// ===== RENDER COLLECTING (host) =====
+function renderCollecting(room, order, activeId, players, doneCount, totalAnswerers, answerers) {
+  document.getElementById('collect-count').textContent = `${doneCount} / ${totalAnswerers} 人が回答済み`;
+  const rowsHtml = answerers.map(id => {
+    const done = (room.answers || {})[id] !== undefined;
+    return `<div class="collect-row">
+      <span style="font-size:20px;">${done ? '✅' : '⏳'}</span>
+      <span style="font-weight:600;color:${done ? '#4a1f8a' : '#aaa'};">${esc(players[id]?.name || id)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('collect-list').innerHTML = rowsHtml;
+  const allDone = doneCount >= totalAnswerers;
+  document.getElementById('collect-ctrl').innerHTML = allDone
+    ? '<button class="btn btn-primary" onclick="hostReveal()">回答を公開する →</button>'
+    : '<div class="waiting-hint">全員の回答を待っています…</div>';
+}
+
+// ===== RENDER REVEAL =====
+function renderReveal(room, order, activeId, amActive, players) {
+  const answers = room.answers || {};
+
+  // Shuffle keys once and keep stable
+  if (shuffledAnswerKeys.length === 0 || !shuffledAnswerKeys.every(k => k in answers)) {
+    shuffledAnswerKeys = shuffle(Object.keys(answers));
+  }
+
+  document.getElementById('reveal-instruction').textContent = amActive
+    ? '一番「言われたい」と思う言葉はどれ？タップして選んでね。'
+    : `${players[activeId]?.name || ''}さんはどれを選ぶ？`;
+
+  const winnerKey = room.winnerKey;
+  const answersHtml = shuffledAnswerKeys.map(key => {
+    const isWinner = winnerKey === key;
+    const canPick = amActive && !winnerKey;
+    return `<div class="answer-card ${isWinner ? 'selected' : ''}"
+      onclick="${canPick ? `pickAnswer('${key}')` : ''}">
+      <div style="font-size:15px;color:#2d2d2d;line-height:1.8;">${esc(answers[key])}</div>
+      ${isWinner ? `<div style="font-size:12px;color:#6b3fa0;margin-top:8px;font-weight:700;">← ${esc(players[key]?.name || '')}さんの言葉</div>` : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('reveal-answers').innerHTML = answersHtml;
+
+  if (winnerKey) {
+    const winnerName = players[winnerKey]?.name || '';
+    document.getElementById('reveal-winner-msg').innerHTML = `
+      <div class="info-box" style="text-align:center;">
+        🎉 <strong>${esc(players[activeId]?.name||'')}さん</strong>が選んだのは<br>
+        <strong style="font-size:18px;">${esc(winnerName)}</strong>さんの言葉！
+      </div>`;
+    document.getElementById('reveal-ctrl').innerHTML = isHost
+      ? '<button class="btn btn-primary" onclick="hostNextTurn()">次のターンへ →</button>'
+      : '<div class="waiting-hint">ホストを待っています…</div>';
+  } else {
+    document.getElementById('reveal-winner-msg').innerHTML = amActive
+      ? ''
+      : `<div class="waiting-hint">${esc(players[activeId]?.name||'')}さんが選んでいます…</div>`;
+    document.getElementById('reveal-ctrl').innerHTML = '';
+  }
+}
+
+// ===== RENDER END =====
+function renderEnd(room, order, players) {
+  const sorted = [...order].sort((a,b) => (players[b]?.score||0) - (players[a]?.score||0));
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('end-scores').innerHTML = sorted.map((id, i) => `
+    <div class="score-row">
+      <span>${medals[i]||'　'} ${esc(players[id]?.name||'')}</span>
+      <span style="color:#6b3fa0;font-size:20px;font-weight:900;">${players[id]?.score||0}pt</span>
+    </div>`).join('');
+  const topPlayer = players[sorted[0]];
+  document.getElementById('end-winner').innerHTML = topPlayer
+    ? `🏆 <strong>${esc(topPlayer.name)}</strong>さんの勝ち！`
+    : '';
+  document.getElementById('end-ctrl').innerHTML = isHost
+    ? '<button class="btn btn-primary" onclick="hostRestart()">もう一度 →</button>'
+    : '';
+}
+
+// ===== CARD RENDER =====
+function renderCard(card, containerId) {
+  if (!card) return;
+  const el = document.getElementById(containerId);
+  if (card.img) {
+    const img = new Image();
+    img.onload = () => {
+      el.innerHTML = `<div class="game-card"><img class="game-card-img" src="${card.img}" alt="${esc(card.title)}"></div>`;
+    };
+    img.onerror = () => { el.innerHTML = cssCard(card); };
+    img.src = card.img;
+  } else {
+    el.innerHTML = cssCard(card);
+  }
+}
+function cssCard(card) {
+  return `<div class="game-card">
+    <div class="game-card-header">
+      <div class="game-card-tag">お 題 カ ー ド</div>
+      <div class="game-card-title">${esc(card.title)}</div>
+    </div>
+    <div class="game-card-illust">💜</div>
+    <div class="game-card-serif">${esc(card.serif)}</div>
+    <div class="game-card-footer">EACH STYLE</div>
+  </div>`;
+}
+
+// ===== HOST ACTIONS =====
+async function hostStartGame() {
+  const snap = await rRef().once('value');
+  await hostBeginTurn(snap.val());
+}
+
+async function hostBeginTurn(room) {
+  const deckIds = room.deckIds || [];
+  if (deckIds.length === 0) {
+    await rRef('phase').set('end');
+    return;
+  }
+  const cardId = deckIds[deckIds.length - 1];
+  shuffledAnswerKeys = [];
+  await rRef().update({
+    phase: 'peek',
+    currentCardId: cardId,
+    deckIds: deckIds.slice(0, -1),
+    answers: {},
+    winnerKey: null,
+    winnerName: null
+  });
+}
+
+async function hostStartAnswering() {
+  await rRef('phase').set('answering');
+}
+
+async function hostReveal() {
+  await rRef('phase').set('reveal');
+}
+
+async function hostNextTurn() {
+  const snap = await rRef().once('value');
+  const room = snap.val();
+  const order = room.playerOrder;
+  const winnerKey = room.winnerKey;
+
+  if (winnerKey && room.players[winnerKey] !== undefined) {
+    const cur = room.players[winnerKey].score || 0;
+    await rRef('players/' + winnerKey + '/score').set(cur + 1);
+  }
+
+  const nextIdx = (room.activeIdx + 1) % order.length;
+  await rRef('activeIdx').set(nextIdx);
+
+  const updatedSnap = await rRef().once('value');
+  await hostBeginTurn(updatedSnap.val());
+}
+
+async function hostRestart() {
+  const snap = await rRef().once('value');
+  const room = snap.val();
+  const order = room.playerOrder;
+  const players = room.players || {};
+  const resetPlayers = {};
+  order.forEach(id => { resetPlayers[id] = { ...players[id], score: 0 }; });
+  const deckIds = shuffle(CARDS.map(c => c.id));
+  await rRef().update({ players: resetPlayers, deckIds, activeIdx: 0, answers: {}, winnerKey: null });
+  const updatedSnap = await rRef().once('value');
+  await hostBeginTurn(updatedSnap.val());
+}
+
+// ===== PLAYER ACTIONS =====
+async function submitAnswer() {
+  const text = document.getElementById('my-answer').value.trim();
+  if (!text) { alert('回答を入力してね'); return; }
+  await rRef('answers/' + myId).set(text);
+  // Refresh UI
+  document.getElementById('ans-ctrl').innerHTML =
+    '<div style="color:#6b3fa0;font-size:14px;font-weight:700;padding:12px;text-align:center;">✅ 送信済み！他の人を待ってます…</div>';
+  document.getElementById('my-answer').disabled = true;
+}
+
+async function pickAnswer(key) {
+  if (!lastRoom || lastRoom.winnerKey) return;
+  await rRef().update({ winnerKey: key });
+}
+
+// ===== LEAVE =====
+function leaveRoom() {
+  if (roomOff) { roomOff(); roomOff = null; }
+  roomCode = null;
+  isHost = false;
+  lastRoom = null;
+  shuffledAnswerKeys = [];
+  showScreen('screen-title');
+}
+</script>
+</body>
+</html>
