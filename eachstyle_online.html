@@ -224,6 +224,8 @@ let isHost = false;
 let roomOff = null;  // unsubscribe fn
 let lastRoom = null;
 let shuffledAnswerKeys = []; // stable shuffle for reveal screen
+let nextTurnBusy = false;   // 二重タップ防止
+let revealBtnTimer = null;  // setTimeoutのクリーンアップ用
 
 // ===== UTILS =====
 function genId() { return Math.random().toString(36).slice(2,10); }
@@ -481,9 +483,10 @@ function renderReveal(room, order, activeId, amActive, players) {
       </div>`;
     if (isHost) {
       document.getElementById('reveal-ctrl').innerHTML = '<div class="waiting-hint">…</div>';
-      setTimeout(() => {
+      if (revealBtnTimer) clearTimeout(revealBtnTimer);
+      revealBtnTimer = setTimeout(() => {
         document.getElementById('reveal-ctrl').innerHTML =
-          '<button class="btn btn-primary" onclick="hostNextTurn()">次のターンへ →</button>';
+          '<button class="btn btn-primary" id="next-turn-btn" onclick="hostNextTurn()">次のターンへ →</button>';
       }, 1500);
     } else {
       document.getElementById('reveal-ctrl').innerHTML = '<div class="waiting-hint">ホストを待っています…</div>';
@@ -574,18 +577,45 @@ async function hostReveal() {
 }
 
 async function hostNextTurn() {
+  if (nextTurnBusy) return;
+  nextTurnBusy = true;
+  const btn = document.getElementById('next-turn-btn');
+  if (btn) btn.disabled = true;
   const snap = await rRef().once('value');
   const room = snap.val();
   const order = room.playerOrder;
   const winnerKey = room.winnerKey;
-  if (winnerKey && room.players[winnerKey] !== undefined) {
-    const cur = room.players[winnerKey].score || 0;
-    await rRef('players/' + winnerKey + '/score').set(cur + 1);
-  }
   const nextIdx = (room.activeIdx + 1) % order.length;
-  await rRef('activeIdx').set(nextIdx);
-  const updatedSnap = await rRef().once('value');
-  await hostBeginTurn(updatedSnap.val());
+  const deckIds = room.deckIds || [];
+
+  if (deckIds.length === 0) {
+    // デッキ切れ → ゲーム終了（スコアも同時に）
+    const updates = { phase: 'end', activeIdx: nextIdx };
+    if (winnerKey && room.players[winnerKey] !== undefined) {
+      updates['players/' + winnerKey + '/score'] = (room.players[winnerKey].score || 0) + 1;
+    }
+    await rRef().update(updates);
+    return;
+  }
+
+  const cardId = deckIds[deckIds.length - 1];
+  shuffledAnswerKeys = [];
+
+  // スコア更新・フェーズ変更・次カード設定を全部1回のupdateで（中間状態をなくす）
+  const updates = {
+    phase: 'peek',
+    currentCardId: cardId,
+    deckIds: deckIds.slice(0, -1),
+    answers: {},
+    winnerKey: null,
+    winnerName: null,
+    activeIdx: nextIdx
+  };
+  if (winnerKey && room.players[winnerKey] !== undefined) {
+    updates['players/' + winnerKey + '/score'] = (room.players[winnerKey].score || 0) + 1;
+  }
+  await rRef().update(updates);
+  nextTurnBusy = false;
 }
 
 async function hostRestart() {
