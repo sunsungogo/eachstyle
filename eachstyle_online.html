@@ -472,7 +472,7 @@ function renderReveal(room, order, activeId, amActive, players) {
 
   if (winnerKey) {
     const winnerName = players[winnerKey]?.name || '';
-    const winnerScore = (players[winnerKey]?.score || 0) + 1; // +1 反映前なので+1して表示
+    const winnerScore = players[winnerKey]?.score || 0; // pickAnswerで既に+1済み
     document.getElementById('reveal-winner-msg').innerHTML = `
       <div class="info-box" style="text-align:center;">
         🎉 <strong>${esc(players[activeId]?.name||'')}さん</strong>が選んだのは<br>
@@ -571,16 +571,8 @@ async function hostNextTurn() {
   const snap = await rRef().once('value');
   const room = snap.val();
   const order = room.playerOrder;
-  const winnerKey = room.winnerKey;
-
-  if (winnerKey && room.players[winnerKey] !== undefined) {
-    const cur = room.players[winnerKey].score || 0;
-    await rRef('players/' + winnerKey + '/score').set(cur + 1);
-  }
-
   const nextIdx = (room.activeIdx + 1) % order.length;
   await rRef('activeIdx').set(nextIdx);
-
   const updatedSnap = await rRef().once('value');
   await hostBeginTurn(updatedSnap.val());
 }
@@ -611,7 +603,13 @@ async function submitAnswer() {
 
 async function pickAnswer(key) {
   if (!lastRoom || lastRoom.winnerKey) return;
-  await rRef().update({ winnerKey: key });
+  // スコアをここで即反映する（hostNextTurnより先に全員に見せるため）
+  const players = lastRoom.players || {};
+  const newScore = (players[key]?.score || 0) + 1;
+  await rRef().update({
+    winnerKey: key,
+    ['players/' + key + '/score']: newScore
+  });
 }
 
 // ===== LEAVE =====
