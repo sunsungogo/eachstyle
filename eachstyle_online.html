@@ -44,6 +44,8 @@ body { font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif; backg
 .sub-label { font-size: 12px; color: #9b6fd0; margin-bottom: 8px; }
 .info-box { background: #e8d5f5; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: #4a1f8a; line-height: 1.9; width: 100%; max-width: 360px; text-align: left; }
 .waiting-hint { color: #9b6fd0; font-size: 13px; margin-top: 12px; text-align: center; }
+.deck-btn { flex:1; padding:12px 0; border-radius:10px; border:2px solid #c4a0f0; background:white; color:#6b3fa0; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:.15s; }
+.deck-btn.active-deck { background:#6b3fa0; color:white; border-color:#6b3fa0; }
 </style>
 </head>
 <body>
@@ -69,8 +71,14 @@ body { font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif; backg
 <div id="screen-create" class="screen">
   <div style="width:100%;max-width:360px;margin-top:48px;">
     <div class="logo-sm" style="text-align:center;">ルームを作る</div>
-    <div class="game-title" style="font-size:26px;margin-bottom:24px;">あなたの名前</div>
-    <input class="input-field" id="host-name" type="text" placeholder="名前を入力（10字以内）" maxlength="10">
+    <div class="game-title" style="font-size:26px;margin-bottom:24px;">ゲーム設定</div>
+    <input class="input-field" id="host-name" type="text" placeholder="あなたの名前（10字以内）" maxlength="10">
+    <div style="font-size:13px;font-weight:700;color:#4a1f8a;margin-bottom:10px;">プレイ枚数</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button class="deck-btn active-deck" onclick="selectDeck(this,5)">5枚</button>
+      <button class="deck-btn" onclick="selectDeck(this,10)">10枚</button>
+      <button class="deck-btn" onclick="selectDeck(this,19)">全部(19枚)</button>
+    </div>
     <button class="btn btn-primary" onclick="handleCreate()">ルームを作成 →</button>
     <button class="btn btn-secondary" onclick="showScreen('screen-title')">もどる</button>
   </div>
@@ -226,6 +234,7 @@ let lastRoom = null;
 let shuffledAnswerKeys = []; // stable shuffle for reveal screen
 let nextTurnBusy = false;   // 二重タップ防止
 let revealBtnTimer = null;  // setTimeoutのクリーンアップ用
+let selectedDeckSize = 5;   // デフォルト5枚
 
 // ===== UTILS =====
 function genId() { return Math.random().toString(36).slice(2,10); }
@@ -248,6 +257,13 @@ function rRef(path) {
   return db.ref('rooms/' + roomCode + (path ? '/' + path : ''));
 }
 
+// ===== DECK SIZE SELECTOR =====
+function selectDeck(btn, size) {
+  document.querySelectorAll('.deck-btn').forEach(b => b.classList.remove('active-deck'));
+  btn.classList.add('active-deck');
+  selectedDeckSize = size;
+}
+
 // ===== CREATE ROOM =====
 async function handleCreate() {
   const name = document.getElementById('host-name').value.trim();
@@ -255,7 +271,7 @@ async function handleCreate() {
   myName = name;
   isHost = true;
   roomCode = genCode();
-  const deckIds = shuffle(CARDS.map(c => c.id));
+  const deckIds = shuffle(CARDS.map(c => c.id)).slice(0, selectedDeckSize);
   await rRef().set({
     phase: 'lobby',
     hostId: myId,
